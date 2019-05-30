@@ -32,10 +32,10 @@ export class CodeActionSet {
 		}
 	}
 
-	public readonly actions: ReadonlyArray<CodeAction>;
+	public readonly actions: readonly CodeAction[];
 
-	public constructor(actions: CodeAction[]) {
-		this.actions = mergeSort(actions, CodeActionSet.codeActionsComparator);
+	public constructor(actions: readonly CodeAction[]) {
+		this.actions = mergeSort([...actions], CodeActionSet.codeActionsComparator);
 	}
 
 	public get hasAutoFix() {

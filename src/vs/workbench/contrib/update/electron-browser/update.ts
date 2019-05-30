@@ -6,7 +6,7 @@
 import * as nls from 'vs/nls';
 import severity from 'vs/base/common/severity';
 import { IAction, Action } from 'vs/base/common/actions';
-import { IDisposable, dispose, Disposable } from 'vs/base/common/lifecycle';
+import { IDisposable, Disposable } from 'vs/base/common/lifecycle';
 import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
 import pkg from 'vs/platform/product/node/package';
 import product from 'vs/platform/product/node/product';
@@ -23,7 +23,7 @@ import * as semver from 'semver';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { INotificationService, INotificationHandle, Severity } from 'vs/platform/notification/common/notification';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { ReleaseNotesManager } from './releaseNotesEditor';
 import { isWindows } from 'vs/base/common/platform';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -270,7 +270,7 @@ class CommandAction extends Action {
 	}
 }
 
-export class UpdateContribution implements IGlobalActivity {
+export class UpdateContribution extends Disposable implements IGlobalActivity {
 
 	private static readonly showCommandsId = 'workbench.action.showCommands';
 	private static readonly openSettingsId = 'workbench.action.openSettings';
@@ -286,7 +286,6 @@ export class UpdateContribution implements IGlobalActivity {
 
 	private state: UpdateState;
 	private badgeDisposable: IDisposable = Disposable.None;
-	private disposables: IDisposable[] = [];
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
@@ -296,11 +295,12 @@ export class UpdateContribution implements IGlobalActivity {
 		@IDialogService private readonly dialogService: IDialogService,
 		@IUpdateService private readonly updateService: IUpdateService,
 		@IActivityService private readonly activityService: IActivityService,
-		@IWindowService private readonly windowService: IWindowService
+		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService
 	) {
+		super();
 		this.state = updateService.state;
 
-		updateService.onStateChange(this.onUpdateStateChange, this, this.disposables);
+		this._register(updateService.onStateChange(this.onUpdateStateChange, this));
 		this.onUpdateStateChange(this.updateService.state);
 
 		/*
@@ -326,7 +326,7 @@ export class UpdateContribution implements IGlobalActivity {
 			case StateType.Idle:
 				if (state.error) {
 					this.onError(state.error);
-				} else if (this.state.type === StateType.CheckingForUpdates && this.state.context && this.state.context.windowId === this.windowService.getCurrentWindowId()) {
+				} else if (this.state.type === StateType.CheckingForUpdates && this.state.context && this.state.context.windowId === this.environmentService.configuration.windowId) {
 					this.onUpdateNotAvailable();
 				}
 				break;
@@ -549,7 +549,7 @@ export class UpdateContribution implements IGlobalActivity {
 				return null;
 
 			case StateType.Idle:
-				const windowId = this.windowService.getCurrentWindowId();
+				const windowId = this.environmentService.configuration.windowId;
 				return new Action('update.check', nls.localize('checkForUpdates', "Check for Updates..."), undefined, true, () =>
 					this.updateService.checkForUpdates({ windowId }));
 
@@ -574,9 +574,5 @@ export class UpdateContribution implements IGlobalActivity {
 				return new Action('update.restart', nls.localize('restartToUpdate', "Restart to Update"), undefined, true, () =>
 					this.updateService.quitAndInstall());
 		}
-	}
-
-	dispose(): void {
-		this.disposables = dispose(this.disposables);
 	}
 }

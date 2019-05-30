@@ -158,7 +158,6 @@ export interface IExtensionGalleryService {
 	getChangelog(extension: IGalleryExtension, token: CancellationToken): Promise<string>;
 	getCoreTranslation(extension: IGalleryExtension, languageId: string): Promise<ITranslation | null>;
 	getAllVersions(extension: IGalleryExtension, compatible: boolean): Promise<IGalleryExtensionVersion[]>;
-	loadAllDependencies(dependencies: IExtensionIdentifier[], token: CancellationToken): Promise<IGalleryExtension[]>;
 	getExtensionsReport(): Promise<IReportedExtension[]>;
 	getCompatibleExtension(extension: IGalleryExtension): Promise<IGalleryExtension | null>;
 	getCompatibleExtension(id: IExtensionIdentifier, version?: string): Promise<IGalleryExtension | null>;
@@ -240,12 +239,6 @@ export interface IExtensionEnablementService {
 	 * Event to listen on for extension enablement changes
 	 */
 	onEnablementChanged: Event<IExtension[]>;
-
-	/**
-	 * Returns all disabled extension identifiers for current workspace
-	 * Returns an empty array if none exist
-	 */
-	getDisabledExtensions(): Promise<IExtensionIdentifier[]>;
 
 	/**
 	 * Returns the enablement state for the given extension
